@@ -1,0 +1,43 @@
+# Build directories
+build/
+artifacts/
+
+# Compiled object files
+*.d
+*.slo
+*.lo
+*.o
+*.obj
+
+# Precompiled headers
+*.gch
+*.pch
+
+# Debug / linker intermediates
+*.ilk
+*.pdb
+*.dwo
+
+# Fortran module files
+*.mod
+*.smod
+
+# Executables
+*.exe
+*.out
+*.app
+
+# Native binaries — ignored globally, re-included inside package/Plugins/
+*.so
+*.dylib
+*.dll
+*.a
+*.lai
+*.la
+*.lib
+
+# Re-include package/Plugins binaries (UPM consumers need them committed)
+!package/Plugins/**/*.so
+!package/Plugins/**/*.dylib
+!package/Plugins/**/*.dll
+!package/Plugins/**/*.a

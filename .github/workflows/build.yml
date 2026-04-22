@@ -1,0 +1,131 @@
+name: Build
+
+on:
+  push:
+    tags: ['v*']
+  workflow_dispatch:
+
+jobs:
+  # ── macOS dylib + iOS static lib ──────────────────────────────────────────
+  build-apple:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build macOS
+        run: |
+          cmake -S . -B build/macos \
+            -DCMAKE_BUILD_TYPE=Release \
+            -DCMAKE_OSX_ARCHITECTURES="arm64;x86_64"
+          cmake --build build/macos --config Release
+          cmake --install build/macos --config Release
+
+      - name: Build iOS
+        run: |
+          cmake -S . -B build/ios \
+            -DCMAKE_SYSTEM_NAME=iOS \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_OSX_DEPLOYMENT_TARGET=14.0 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/ios --config Release
+          cmake --install build/ios --config Release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugins-apple
+          path: package/Plugins/
+
+  # ── Windows x64 DLL ───────────────────────────────────────────────────────
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Build Windows
+        run: |
+          cmake -S . -B build/windows -A x64
+          cmake --build build/windows --config Release
+          cmake --install build/windows --config Release
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugins-windows
+          path: package/Plugins/
+
+  # ── Android arm64-v8a + x86_64 → AAR ─────────────────────────────────────
+  build-android:
+    runs-on: ubuntu-latest
+    env:
+      NDK_VERSION: 27.2.12479018
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install NDK
+        run: |
+          echo "y" | $ANDROID_SDK_ROOT/cmdline-tools/latest/bin/sdkmanager "ndk;${{ env.NDK_VERSION }}"
+
+      - name: Build arm64-v8a
+        run: |
+          cmake -S . -B build/android-arm64 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_SDK_ROOT/ndk/${{ env.NDK_VERSION }}/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=arm64-v8a \
+            -DANDROID_PLATFORM=android-26 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/android-arm64 --config Release
+          cmake --install build/android-arm64 --config Release
+
+      - name: Build x86_64
+        run: |
+          cmake -S . -B build/android-x86_64 \
+            -DCMAKE_TOOLCHAIN_FILE=$ANDROID_SDK_ROOT/ndk/${{ env.NDK_VERSION }}/build/cmake/android.toolchain.cmake \
+            -DANDROID_ABI=x86_64 \
+            -DANDROID_PLATFORM=android-26 \
+            -DCMAKE_BUILD_TYPE=Release
+          cmake --build build/android-x86_64 --config Release
+          cmake --install build/android-x86_64 --config Release
+
+      - name: Package AAR
+        run: cmake -P cmake/android_aar.cmake
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: plugins-android
+          path: package/Plugins/Android/
+
+  # ── Publish GitHub Release ────────────────────────────────────────────────
+  release:
+    needs: [build-apple, build-windows, build-android]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugins-apple
+          path: package/Plugins/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugins-windows
+          path: package/Plugins/
+
+      - uses: actions/download-artifact@v4
+        with:
+          name: plugins-android
+          path: package/Plugins/Android/
+
+      - name: Zip package
+        run: zip -r UnityImGuiPlugin-${{ github.ref_name }}.zip package/
+
+      - uses: softprops/action-gh-release@v2
+        with:
+          files: UnityImGuiPlugin-${{ github.ref_name }}.zip
+          generate_release_notes: true
