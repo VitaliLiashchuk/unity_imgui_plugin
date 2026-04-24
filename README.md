@@ -60,7 +60,7 @@ cmake --build build/macos --config Release
 cmake --install build/macos --config Release
 ```
 
-Output: `package/Plugins/Darwin/UnityImGuiPlugin.dylib`
+Output: `Plugins/Darwin/UnityImGuiPlugin.dylib`
 
 ---
 
@@ -76,7 +76,7 @@ cmake --build build/ios --config Release
 cmake --install build/ios --config Release
 ```
 
-Output: `package/Plugins/iOS/UnityImGuiPlugin.a`
+Output: `Plugins/iOS/UnityImGuiPlugin.a`
 
 ---
 
@@ -109,7 +109,7 @@ cmake --install build/android-x86_64 --config Release
 cmake -P cmake/android_aar.cmake
 ```
 
-Output: `package/Plugins/Android/UnityImGuiPlugin.aar`
+Output: `Plugins/Android/UnityImGuiPlugin.aar`
 
 ---
 
@@ -121,7 +121,7 @@ cmake --build build\windows --config Release
 cmake --install build\windows --config Release
 ```
 
-Output: `package\Plugins\Windows\x86_64\UnityImGuiPlugin.dll`
+Output: `Plugins\Windows\x86_64\UnityImGuiPlugin.dll`
 
 ---
 

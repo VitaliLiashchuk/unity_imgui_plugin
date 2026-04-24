@@ -35,7 +35,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: plugins-apple
-          path: package/Plugins/
+          path: Plugins/
 
   # ── Windows x64 DLL ───────────────────────────────────────────────────────
   build-windows:
@@ -54,7 +54,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: plugins-windows
-          path: package/Plugins/
+          path: Plugins/
 
   # ── Android arm64-v8a + x86_64 → AAR ─────────────────────────────────────
   build-android:
@@ -96,7 +96,7 @@ jobs:
       - uses: actions/upload-artifact@v4
         with:
           name: plugins-android
-          path: package/Plugins/Android/
+          path: Plugins/Android/
 
   # ── Publish GitHub Release ────────────────────────────────────────────────
   release:
@@ -110,17 +110,17 @@ jobs:
       - uses: actions/download-artifact@v4
         with:
           name: plugins-apple
-          path: package/Plugins/
+          path: Plugins/
 
       - uses: actions/download-artifact@v4
         with:
           name: plugins-windows
-          path: package/Plugins/
+          path: Plugins/
 
       - uses: actions/download-artifact@v4
         with:
           name: plugins-android
-          path: package/Plugins/Android/
+          path: Plugins/Android/
 
       - name: Resolve version
         id: version
@@ -131,8 +131,176 @@ jobs:
             echo "name=dev-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
           fi
 
-      - name: Zip package
-        run: zip -r UnityImGuiPlugin-${{ steps.version.outputs.name }}.zip package/
+      - name: Generate meta files
+        run: |
+          python3 - <<'EOF'
+          import os, hashlib
+
+          def make_guid(path):
+              return hashlib.md5(path.encode()).hexdigest()
+
+          def folder_meta(guid):
+              return f"""fileFormatVersion: 2
+          guid: {guid}
+          folderAsset: yes
+          DefaultImporter:
+            externalObjects: {{}}
+            userData:
+            assetBundleName:
+            assetBundleVariant:
+          """
+
+          def cs_meta(guid):
+              return f"""fileFormatVersion: 2
+          guid: {guid}
+          MonoImporter:
+            externalObjects: {{}}
+            serializedVersion: 2
+            defaultReferences: []
+            executionOrder: 0
+            icon: {{instanceID: 0}}
+            userData:
+            assetBundleName:
+            assetBundleVariant:
+          """
+
+          def asmdef_meta(guid):
+              return f"""fileFormatVersion: 2
+          guid: {guid}
+          AssemblyDefinitionImporter:
+            externalObjects: {{}}
+            userData:
+            assetBundleName:
+            assetBundleVariant:
+          """
+
+          def plugin_meta(guid, enabled_platforms):
+              lines = [
+                  "fileFormatVersion: 2",
+                  f"guid: {guid}",
+                  "PluginImporter:",
+                  "  externalObjects: {}",
+                  "  serializedVersion: 2",
+                  "  iconMap: {}",
+                  "  executionOrder: {}",
+                  "  defineConstraints: []",
+                  "  isPreloaded: 0",
+                  "  isOverridable: 0",
+                  "  isExplicitlyReferenced: 0",
+                  "  validateReferences: 1",
+                  "  platformData:",
+              ]
+              for p, enabled, settings in enabled_platforms:
+                  lines.append(f"    {p}:")
+                  lines.append(f"      enabled: {enabled}")
+                  lines.append(f"      settings:")
+                  for k, v in settings.items():
+                      lines.append(f"        {k}: {v}")
+              lines += ["  userData: ", "  assetBundleName: ", "  assetBundleVariant: ", ""]
+              return "\n".join(lines)
+
+          def json_meta(guid):
+              return f"""fileFormatVersion: 2
+          guid: {guid}
+          TextScriptImporter:
+            externalObjects: {{}}
+            userData:
+            assetBundleName:
+            assetBundleVariant:
+          """
+
+          root = "."
+          for dirpath, dirnames, filenames in os.walk(root):
+              dirnames[:] = [d for d in dirnames if d not in ['.git', 'build', 'thirdparty', 'src', 'include', 'cmake', 'android']]
+              rel_dir = os.path.relpath(dirpath, root)
+              if rel_dir != ".":
+                  meta_path = dirpath + ".meta"
+                  if not os.path.exists(meta_path):
+                      guid = make_guid("dir:" + rel_dir)
+                      with open(meta_path, "w") as f:
+                          f.write(folder_meta(guid))
+              for fname in filenames:
+                  if fname.endswith(".meta"):
+                      continue
+                  fpath = os.path.join(dirpath, fname)
+                  meta_path = fpath + ".meta"
+                  if os.path.exists(meta_path):
+                      continue
+                  rel = os.path.relpath(fpath, root)
+                  guid = make_guid("file:" + rel)
+                  ext = os.path.splitext(fname)[1].lower()
+                  if ext == ".cs":
+                      content = cs_meta(guid)
+                  elif ext == ".asmdef":
+                      content = asmdef_meta(guid)
+                  elif ext == ".json":
+                      content = json_meta(guid)
+                  elif ext == ".dll":
+                      content = plugin_meta(guid, [
+                          ("Any", 0, {"Exclude Editor": 1, "Exclude Linux64": 1, "Exclude OSXUniversal": 1, "Exclude Win": 1, "Exclude Win64": 0, "Exclude iOS": 1, "Exclude Android": 1}),
+                          ("Win64", 1, {"CPU": "x86_64"}),
+                          ("Editor", 0, {"CPU": "x86_64", "DefaultValueInitialized": "true", "OS": "Windows"}),
+                      ])
+                  elif ext == ".dylib":
+                      content = plugin_meta(guid, [
+                          ("Any", 0, {"Exclude Editor": 0, "Exclude Linux64": 1, "Exclude OSXUniversal": 0, "Exclude Win": 1, "Exclude Win64": 1, "Exclude iOS": 1, "Exclude Android": 1}),
+                          ("OSXUniversal", 1, {"CPU": "AnyCPU"}),
+                          ("Editor", 1, {"CPU": "AnyCPU", "DefaultValueInitialized": "true", "OS": "OSX"}),
+                      ])
+                  elif ext == ".a":
+                      content = plugin_meta(guid, [
+                          ("Any", 0, {"Exclude Editor": 1, "Exclude Linux64": 1, "Exclude OSXUniversal": 1, "Exclude Win": 1, "Exclude Win64": 1, "Exclude iOS": 0, "Exclude Android": 1}),
+                          ("iOS", 1, {"AddToEmbeddedBinaries": "false", "CPU": "AnyCPU"}),
+                          ("Editor", 0, {"CPU": "AnyCPU", "DefaultValueInitialized": "true", "OS": "AnyOS"}),
+                      ])
+                  elif ext == ".aar":
+                      content = plugin_meta(guid, [
+                          ("Any", 0, {"Exclude Editor": 1, "Exclude Linux64": 1, "Exclude OSXUniversal": 1, "Exclude Win": 1, "Exclude Win64": 1, "Exclude iOS": 1, "Exclude Android": 0}),
+                          ("Android", 1, {"CPU": "AnyCPU"}),
+                          ("Editor", 0, {"CPU": "AnyCPU", "DefaultValueInitialized": "true", "OS": "AnyOS"}),
+                      ])
+                  elif ext == ".lib":
+                      continue  # .lib is a linker stub, not needed by Unity
+                  else:
+                      continue
+                  with open(meta_path, "w") as f:
+                      f.write(content)
+                  print(f"Generated: {meta_path}")
+          EOF
+
+      - name: Push package to upm branch
+        run: |
+          mkdir upm_staging
+          cp package.json upm_staging/
+          cp -r Runtime   upm_staging/Runtime
+          cp -r Plugins   upm_staging/Plugins
+          # Copy generated meta files
+          cp package.json.meta  upm_staging/ 2>/dev/null || true
+          cp Runtime.meta       upm_staging/ 2>/dev/null || true
+          cp Plugins.meta       upm_staging/ 2>/dev/null || true
+          cp -r Runtime/*.meta  upm_staging/Runtime/ 2>/dev/null || true
+          find Plugins -name "*.meta" | while read f; do
+            dest="upm_staging/${f}"
+            mkdir -p "$(dirname "$dest")"
+            cp "$f" "$dest"
+          done
+          cd upm_staging
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release ${{ steps.version.outputs.name }}"
+          git push --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            HEAD:upm
+
+      - name: Zip release
+        run: |
+          mkdir release_zip
+          cp package.json release_zip/
+          cp -r Runtime release_zip/Runtime
+          cp -r Plugins release_zip/Plugins
+          zip -r UnityImGuiPlugin-${{ steps.version.outputs.name }}.zip release_zip/
 
       - uses: softprops/action-gh-release@v2
         with:
@@ -140,22 +308,6 @@ jobs:
           files: UnityImGuiPlugin-${{ steps.version.outputs.name }}.zip
           generate_release_notes: ${{ github.ref_type == 'tag' }}
           prerelease: ${{ github.ref_type != 'tag' }}
-
-      - name: Push package to upm branch
-        run: |
-          mkdir upm_staging
-          cp package/package.json upm_staging/
-          cp -r package/Runtime   upm_staging/Runtime
-          cp -r package/Plugins   upm_staging/Plugins
-          cd upm_staging
-          git init
-          git config user.name "github-actions[bot]"
-          git config user.email "github-actions[bot]@users.noreply.github.com"
-          git add package.json Runtime Plugins
-          git commit -m "Release ${{ steps.version.outputs.name }}"
-          git push --force \
-            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
-            HEAD:upm
 
       - name: Tag upm commit
         if: github.ref_type == 'tag'

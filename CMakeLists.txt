@@ -112,16 +112,14 @@ endif()
 # --------------------------------------------------------------------------
 # Install → package/Plugins/<platform>/  (UPM package)
 # --------------------------------------------------------------------------
-set(UNITY_PACKAGE_ROOT "${CMAKE_CURRENT_SOURCE_DIR}/package")
-
 if(CMAKE_SYSTEM_NAME STREQUAL iOS)
-    set(UNITY_PLUGIN_DEST "${UNITY_PACKAGE_ROOT}/Plugins/iOS")
+    set(UNITY_PLUGIN_DEST "${CMAKE_CURRENT_SOURCE_DIR}/Plugins/iOS")
 elseif(CMAKE_SYSTEM_NAME STREQUAL Darwin)
-    set(UNITY_PLUGIN_DEST "${UNITY_PACKAGE_ROOT}/Plugins/Darwin")
+    set(UNITY_PLUGIN_DEST "${CMAKE_CURRENT_SOURCE_DIR}/Plugins/Darwin")
 elseif(ANDROID)
     set(UNITY_PLUGIN_DEST "${CMAKE_CURRENT_SOURCE_DIR}/build/android_aar/jni/${ANDROID_ABI}")
 elseif(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL Windows)
-    set(UNITY_PLUGIN_DEST "${UNITY_PACKAGE_ROOT}/Plugins/Windows/x86_64")
+    set(UNITY_PLUGIN_DEST "${CMAKE_CURRENT_SOURCE_DIR}/Plugins/Windows/x86_64")
 endif()
 
 if(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL Windows)
