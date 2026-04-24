@@ -107,6 +107,7 @@ elseif(WIN32 OR CMAKE_SYSTEM_NAME STREQUAL Windows)
     target_compile_definitions(UnityImGuiPlugin PRIVATE NOMINMAX WIN32_LEAN_AND_MEAN)
     target_link_libraries(UnityImGuiPlugin PRIVATE d3d11 d3d12 dxgi)
     set_target_properties(UnityImGuiPlugin PROPERTIES DEBUG_POSTFIX "")
+    set_target_properties(UnityImGuiPlugin PROPERTIES DEBUG_POSTFIX "" WINDOWS_EXPORT_ALL_SYMBOLS ON)
 endif()
 
 # --------------------------------------------------------------------------
