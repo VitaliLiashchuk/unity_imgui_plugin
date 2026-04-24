@@ -1,0 +1,13 @@
+{
+  "name": "com.liashchuk.unityimgui",
+  "version": "0.1.0",
+  "displayName": "Unity ImGui Plugin",
+  "description": "Dear ImGui rendered via Unity's native graphics device. Supports Metal (iOS/macOS), Vulkan/GLES3 (Android), D3D11/D3D12 (Windows).",
+  "unity": "2021.3",
+  "keywords": ["imgui", "debug", "ui", "native"],
+  "author": {
+    "name": "Vitali Liashchuk",
+    "email": "vitali.liashchuk@gmail.com",
+    "url": "https://github.com/VitaliLiashchuk"
+  }
+}
