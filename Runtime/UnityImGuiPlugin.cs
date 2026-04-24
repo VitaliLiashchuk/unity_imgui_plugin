@@ -1,5 +1,4 @@
 using System;
-using System.Collections;
 using System.Runtime.InteropServices;
 using AOT;
 using UnityEngine;
@@ -37,17 +36,13 @@ public class UnityImGuiPlugin : MonoBehaviour
 
     void OnDestroy() => UnityImGui_Shutdown();
 
-    void OnEnable()  => StartCoroutine(RenderLoop());
-    void OnDisable() => StopAllCoroutines();
+    void OnEnable()  => Camera.onPostRender += OnCameraPostRender;
+    void OnDisable() => Camera.onPostRender -= OnCameraPostRender;
 
-    IEnumerator RenderLoop()
+    void OnCameraPostRender(Camera cam)
     {
-        var waitForEndOfFrame = new WaitForEndOfFrame();
-        while (true)
-        {
-            yield return waitForEndOfFrame;
+        if (cam.CompareTag("MainCamera"))
             GL.IssuePluginEvent(GetRenderEventFunc(), UnityImGui_GetEventId());
-        }
     }
 
     [MonoPInvokeCallback(typeof(Action))]
