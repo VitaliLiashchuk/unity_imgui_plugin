@@ -20,7 +20,8 @@ namespace
     IUnityGraphicsD3D12v6* gD3D12Graphics = nullptr;
     UnityGfxRenderer gActiveRenderer = kUnityGfxRendererNull;
 
-    WNDPROC gOriginalWndProc = nullptr;
+    HWND    gHookedHwnd        = nullptr;
+    WNDPROC gOriginalWndProc   = nullptr;
     ID3D12CommandAllocator* gD3D12Allocator = nullptr;
     ID3D12GraphicsCommandList* gD3D12CmdList = nullptr;
 
@@ -101,8 +102,11 @@ void CreateImGuiRenderer(void* /*platformArg0*/, void* /*platformArg1*/)
     if (!hwnd) return;
 
     if (!gOriginalWndProc)
+    {
+        gHookedHwnd      = hwnd;
         gOriginalWndProc = reinterpret_cast<WNDPROC>(
             SetWindowLongPtr(hwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(CustomWndProc)));
+    }
 
     auto* graphics = gUnityInterfaces->Get<IUnityGraphics>();
     UnityGfxRenderer renderer = graphics->GetRenderer();
@@ -127,6 +131,13 @@ void DestroyImGuiRenderer()
     if (gActiveRenderer == kUnityGfxRendererD3D11) UnityImGui::D3D11_Shutdown();
     else if (gActiveRenderer == kUnityGfxRendererD3D12) UnityImGui::D3D12_Shutdown();
     gActiveRenderer = kUnityGfxRendererNull;
+
+    if (gOriginalWndProc && gHookedHwnd)
+    {
+        SetWindowLongPtr(gHookedHwnd, GWLP_WNDPROC, reinterpret_cast<LONG_PTR>(gOriginalWndProc));
+        gOriginalWndProc = nullptr;
+        gHookedHwnd      = nullptr;
+    }
 
     if (gD3D12CmdList)   { gD3D12CmdList->Release();   gD3D12CmdList   = nullptr; }
     if (gD3D12Allocator) { gD3D12Allocator->Release(); gD3D12Allocator = nullptr; }
