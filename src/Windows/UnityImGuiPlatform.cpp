@@ -28,6 +28,36 @@ namespace
     LRESULT CALLBACK CustomWndProc(HWND hWnd, UINT msg, WPARAM wParam, LPARAM lParam)
     {
         if (ImGui_ImplWin32_WndProcHandler(hWnd, msg, wParam, lParam)) return TRUE;
+
+        switch (msg)
+        {
+        case WM_POINTERDOWN:
+        case WM_POINTERUPDATE:
+        case WM_POINTERUP:
+        {
+            if (ImGui::GetCurrentContext() == nullptr) break;
+            UINT32 pointerId = GET_POINTERID_WPARAM(wParam);
+            POINTER_INFO info{};
+            if (GetPointerInfo(pointerId, &info) &&
+                (info.pointerFlags & POINTER_FLAG_PRIMARY) &&
+                (info.pointerType == PT_TOUCH || info.pointerType == PT_PEN))
+            {
+                POINT pt = info.ptPixelLocation;
+                ScreenToClient(hWnd, &pt);
+                ImGuiIO& io = ImGui::GetIO();
+                io.AddMouseSourceEvent(info.pointerType == PT_TOUCH
+                                           ? ImGuiMouseSource_TouchScreen
+                                           : ImGuiMouseSource_Pen);
+                io.AddMousePosEvent(static_cast<float>(pt.x), static_cast<float>(pt.y));
+                if (msg == WM_POINTERDOWN)
+                    io.AddMouseButtonEvent(0, true);
+                else if (msg == WM_POINTERUP)
+                    io.AddMouseButtonEvent(0, false);
+            }
+            break;
+        }
+        }
+
         return CallWindowProc(gOriginalWndProc, hWnd, msg, wParam, lParam);
     }
 
@@ -35,7 +65,6 @@ namespace
     {
         auto* device = gD3D12Graphics->GetDevice();
 
-        // Release previous frame's command list (GPU idle — Unity flushes before plugin event)
         if (gD3D12CmdList) { gD3D12CmdList->Release(); gD3D12CmdList = nullptr; }
 
         if (!gD3D12Allocator)
@@ -54,7 +83,6 @@ namespace
         cmdList->Close();
         ID3D12CommandList* lists[] = {cmdList};
         gD3D12Graphics->GetCommandQueue()->ExecuteCommandLists(1, lists);
-        // cmdList released next frame in GetD3D12CommandList
     }
 
     UnityD3D12PluginEventConfig MakeD3D12EventConfig()
