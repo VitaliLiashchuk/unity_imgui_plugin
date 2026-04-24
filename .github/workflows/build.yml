@@ -122,10 +122,21 @@ jobs:
           name: plugins-android
           path: package/Plugins/Android/
 
+      - name: Resolve version
+        id: version
+        run: |
+          if [[ "${{ github.ref_type }}" == "tag" ]]; then
+            echo "name=${{ github.ref_name }}" >> $GITHUB_OUTPUT
+          else
+            echo "name=dev-$(date +'%Y%m%d-%H%M%S')" >> $GITHUB_OUTPUT
+          fi
+
       - name: Zip package
-        run: zip -r UnityImGuiPlugin-${{ github.ref_name }}.zip package/
+        run: zip -r UnityImGuiPlugin-${{ steps.version.outputs.name }}.zip package/
 
       - uses: softprops/action-gh-release@v2
         with:
-          files: UnityImGuiPlugin-${{ github.ref_name }}.zip
-          generate_release_notes: true
+          tag_name: ${{ steps.version.outputs.name }}
+          files: UnityImGuiPlugin-${{ steps.version.outputs.name }}.zip
+          generate_release_notes: ${{ github.ref_type == 'tag' }}
+          prerelease: ${{ github.ref_type != 'tag' }}
