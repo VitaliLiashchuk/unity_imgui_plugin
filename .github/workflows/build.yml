@@ -140,3 +140,24 @@ jobs:
           files: UnityImGuiPlugin-${{ steps.version.outputs.name }}.zip
           generate_release_notes: ${{ github.ref_type == 'tag' }}
           prerelease: ${{ github.ref_type != 'tag' }}
+
+      - name: Push package to upm branch
+        run: |
+          cd package
+          git init
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Release ${{ steps.version.outputs.name }}"
+          git push --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            HEAD:upm
+
+      - name: Tag upm commit
+        if: github.ref_type == 'tag'
+        run: |
+          cd package
+          git tag ${{ steps.version.outputs.name }}
+          git push --force \
+            "https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git" \
+            ${{ steps.version.outputs.name }}
