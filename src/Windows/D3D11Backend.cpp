@@ -6,8 +6,11 @@
 
 namespace UnityImGui
 {
+    static ID3D11DeviceContext* gCtx = nullptr;
+
     void D3D11_Init(HWND hwnd, ID3D11Device* device, ID3D11DeviceContext* context)
     {
+        gCtx = context;
         IMGUI_CHECKVERSION();
         ImGui::CreateContext();
         ImGuiIO& io = ImGui::GetIO();
@@ -23,6 +26,7 @@ namespace UnityImGui
         ImGui_ImplDX11_Shutdown();
         ImGui_ImplWin32_Shutdown();
         ImGui::DestroyContext();
+        gCtx = nullptr;
     }
 
     void D3D11_Render()

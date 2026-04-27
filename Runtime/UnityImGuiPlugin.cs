@@ -16,6 +16,7 @@ public class UnityImGuiPlugin : MonoBehaviour
     [DllImport(PluginName)] static extern void   UnityImGui_SetRenderCallback(Action callback);
     [DllImport(PluginName)] static extern void   UnityImGui_Initialize(IntPtr arg0, IntPtr arg1);
     [DllImport(PluginName)] static extern void   UnityImGui_Shutdown();
+    [DllImport(PluginName)] static extern void   UnityImGui_SetMouse(float x, float y, int leftDown);
 
     public static event Action OnImGuiDraw;
 
@@ -39,10 +40,17 @@ public class UnityImGuiPlugin : MonoBehaviour
     void OnEnable()  => Camera.onPostRender += OnCameraPostRender;
     void OnDisable() => Camera.onPostRender -= OnCameraPostRender;
 
+    void Update()
+    {
+        // Unity Y origin is bottom-left, ImGui is top-left — flip Y.
+        Vector2 mp = Input.mousePosition;
+        UnityImGui_SetMouse(mp.x, Screen.height - mp.y, Input.GetMouseButton(0) ? 1 : 0);
+    }
+
     void OnCameraPostRender(Camera cam)
     {
-        if (cam.CompareTag("MainCamera"))
-            GL.IssuePluginEvent(GetRenderEventFunc(), UnityImGui_GetEventId());
+        if (!cam.CompareTag("MainCamera")) return;
+        GL.IssuePluginEvent(GetRenderEventFunc(), UnityImGui_GetEventId());
     }
 
     [MonoPInvokeCallback(typeof(Action))]
