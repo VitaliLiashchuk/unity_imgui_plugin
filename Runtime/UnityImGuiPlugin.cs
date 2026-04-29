@@ -40,12 +40,13 @@ public class UnityImGuiPlugin : MonoBehaviour
     void OnEnable()  => Camera.onPostRender += OnCameraPostRender;
     void OnDisable() => Camera.onPostRender -= OnCameraPostRender;
 
+#if UNITY_EDITOR
     void Update()
     {
-        // Unity Y origin is bottom-left, ImGui is top-left — flip Y.
         Vector2 mp = Input.mousePosition;
         UnityImGui_SetMouse(mp.x, Screen.height - mp.y, Input.GetMouseButton(0) ? 1 : 0);
     }
+#endif
 
     void OnCameraPostRender(Camera cam)
     {

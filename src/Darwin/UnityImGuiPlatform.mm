@@ -114,16 +114,15 @@ void DestroyImGuiRenderer()
 void RenderImGui()
 {
     if (!ImGui::GetCurrentContext()) return;
-
-    if (gUnityMetalView && gUnityMetalView.window)
-    {
-        NSPoint globalMouse = [gUnityMetalView.window mouseLocationOutsideOfEventStream];
-        NSPoint localMouse = [gUnityMetalView convertPoint:globalMouse fromView:nil];
-        localMouse.y = gUnityMetalView.bounds.size.height - localMouse.y - 46; // Unity Editor toolbar height
-        ImGuiIO& io = ImGui::GetIO();
-        io.MousePos = ImVec2(localMouse.x, localMouse.y);
-        io.MouseDown[0] = ([NSEvent pressedMouseButtons] & 1) != 0;
-    }
-
     if (gInitialized) UnityImGui::Metal_Render();
+}
+
+extern "C"
+{
+    void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityImGui_SetMouse(float x, float y, int leftDown)
+    {
+        ImGuiIO& io = ImGui::GetIO();
+        io.AddMousePosEvent(x, y);
+        io.AddMouseButtonEvent(0, leftDown != 0);
+    }
 }
