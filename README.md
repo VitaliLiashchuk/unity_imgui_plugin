@@ -7,6 +7,26 @@ No third-party SDK required — only Unity Plugin API + imgui.
 
 ---
 
+## Install (UPM)
+
+In Unity: **Window → Package Manager → + → Install package from git URL…**
+
+```
+https://github.com/VitaliLiashchuk/unity_imgui_plugin.git
+```
+
+Or add to `Packages/manifest.json`:
+
+```json
+"com.liashchuk.unityimgui": "https://github.com/VitaliLiashchuk/unity_imgui_plugin.git"
+```
+
+Pin a version with `#<tag>` (e.g. `#v0.1.0`).
+
+After install, attach `UnityImGuiPlugin` component to a GameObject and subscribe to `UnityImGuiPlugin.OnImGuiDraw` (see [Unity C# integration](#unity-c-integration)).
+
+---
+
 ## Repository layout
 
 ```
