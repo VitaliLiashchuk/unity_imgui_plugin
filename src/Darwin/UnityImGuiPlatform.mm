@@ -30,18 +30,17 @@ namespace
         return nil;
     }
 
-    void UpdateDisplaySizeFromTexture(NSView* metalView, NSUInteger w, NSUInteger h)
+    void UpdateDisplaySizeFromTexture(NSView* metalView, NSUInteger /*w*/, NSUInteger /*h*/)
     {
         if (!metalView || !metalView.window) return;
         CGSize bounds = metalView.bounds.size;
-        float scale = 1.0f;
-        float margin = 100.0f;
-        if (std::abs(static_cast<float>(h) - bounds.height * 2.0f) < margin) scale = 2.0f;
-        else if (std::abs(static_cast<float>(h) - bounds.height * 1.0f) < margin) scale = 1.0f;
+        CGFloat scale = metalView.window.screen.backingScaleFactor;
+        if (scale <= 0.1f || isnan(scale)) scale = 1.0f;
 
         ImGuiIO& io = ImGui::GetIO();
-        io.DisplaySize = ImVec2(static_cast<float>(w), static_cast<float>(h));
-        io.DisplayFramebufferScale = ImVec2(scale, scale);
+        io.DisplaySize = ImVec2(static_cast<float>(bounds.width  * scale),
+                                static_cast<float>(bounds.height * scale));
+        io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
     }
 
     UnityImGui::MetalFrameData GetFrameData()
