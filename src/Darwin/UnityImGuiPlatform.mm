@@ -120,6 +120,7 @@ extern "C"
 {
     void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityImGui_SetMouse(float x, float y, int leftDown)
     {
+        if (!ImGui::GetCurrentContext()) return;
         ImGuiIO& io = ImGui::GetIO();
         io.AddMousePosEvent(x, y);
         io.AddMouseButtonEvent(0, leftDown != 0);
