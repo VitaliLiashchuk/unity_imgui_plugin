@@ -34,6 +34,7 @@ namespace UnityImGui
         io.DisplaySize = ImVec2(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
         io.IniFilename = gImguiConfigPath.empty() ? nullptr : gImguiConfigPath.c_str();
         io.DisplayFramebufferScale = ImVec2(windowScale, windowScale);
+        io.FontGlobalScale = windowScale;
         ImGui::StyleColorsDark();
         ImGui_ImplMetal_Init(&device);
         gInitialized = true;
