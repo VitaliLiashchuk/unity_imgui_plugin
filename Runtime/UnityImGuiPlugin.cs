@@ -2,6 +2,7 @@ using System;
 using System.Runtime.InteropServices;
 using AOT;
 using UnityEngine;
+using UnityEngine.Rendering;
 
 public class UnityImGuiPlugin : MonoBehaviour
 {
@@ -37,8 +38,17 @@ public class UnityImGuiPlugin : MonoBehaviour
 
     void OnDestroy() => UnityImGui_Shutdown();
 
-    void OnEnable()  => Camera.onPostRender += OnCameraPostRender;
-    void OnDisable() => Camera.onPostRender -= OnCameraPostRender;
+    void OnEnable()
+    {
+        Camera.onPostRender += OnCameraPostRender;
+        RenderPipelineManager.endCameraRendering += OnEndCameraRendering;
+    }
+
+    void OnDisable()
+    {
+        Camera.onPostRender -= OnCameraPostRender;
+        RenderPipelineManager.endCameraRendering -= OnEndCameraRendering;
+    }
 
 #if UNITY_EDITOR
     void Update()
@@ -49,6 +59,12 @@ public class UnityImGuiPlugin : MonoBehaviour
 #endif
 
     void OnCameraPostRender(Camera cam)
+    {
+        if (!cam.CompareTag("MainCamera")) return;
+        GL.IssuePluginEvent(GetRenderEventFunc(), UnityImGui_GetEventId());
+    }
+
+    void OnEndCameraRendering(ScriptableRenderContext ctx, Camera cam)
     {
         if (!cam.CompareTag("MainCamera")) return;
         GL.IssuePluginEvent(GetRenderEventFunc(), UnityImGui_GetEventId());
