@@ -185,17 +185,22 @@ jobs:
                   "  executionOrder: {}",
                   "  defineConstraints: []",
                   "  isPreloaded: 0",
-                  "  isOverridable: 0",
+                  "  isOverridable: 1",
                   "  isExplicitlyReferenced: 0",
                   "  validateReferences: 1",
                   "  platformData:",
               ]
-              for p, enabled, settings in enabled_platforms:
-                  lines.append(f"    {p}:")
+              for group, platform, enabled, settings in enabled_platforms:
+                  lines.append("  - first:")
+                  lines.append(f"      {group}: {platform}")
+                  lines.append("    second:")
                   lines.append(f"      enabled: {enabled}")
-                  lines.append(f"      settings:")
-                  for k, v in settings.items():
-                      lines.append(f"        {k}: {v}")
+                  if settings:
+                      lines.append("      settings:")
+                      for k, v in settings.items():
+                          lines.append(f"        {k}: {v}")
+                  else:
+                      lines.append("      settings: {}")
               lines += ["  userData: ", "  assetBundleName: ", "  assetBundleVariant: ", ""]
               return "\n".join(lines)
 
@@ -237,27 +242,27 @@ jobs:
                       content = json_meta(guid)
                   elif ext == ".dll":
                       content = plugin_meta(guid, [
-                          ("Any", 0, {"Exclude Editor": 1, "Exclude Linux64": 1, "Exclude OSXUniversal": 1, "Exclude Win": 1, "Exclude Win64": 0, "Exclude iOS": 1, "Exclude Android": 1}),
-                          ("Win64", 1, {"CPU": "x86_64"}),
-                          ("Editor", 0, {"CPU": "x86_64", "DefaultValueInitialized": "true", "OS": "Windows"}),
+                          ("Any", "", 0, {}),
+                          ("Editor", "Editor", 0, {"CPU": "x86_64", "DefaultValueInitialized": "true", "OS": "Windows"}),
+                          ("Standalone", "Win64", 1, {"CPU": "x86_64"}),
                       ])
                   elif ext == ".dylib":
                       content = plugin_meta(guid, [
-                          ("Any", 0, {"Exclude Editor": 0, "Exclude Linux64": 1, "Exclude OSXUniversal": 0, "Exclude Win": 1, "Exclude Win64": 1, "Exclude iOS": 1, "Exclude Android": 1}),
-                          ("OSXUniversal", 1, {"CPU": "AnyCPU"}),
-                          ("Editor", 1, {"CPU": "AnyCPU", "DefaultValueInitialized": "true", "OS": "OSX"}),
+                          ("Any", "", 0, {}),
+                          ("Editor", "Editor", 1, {"CPU": "AnyCPU", "DefaultValueInitialized": "true", "OS": "OSX"}),
+                          ("Standalone", "OSXUniversal", 1, {"CPU": "AnyCPU"}),
                       ])
                   elif ext == ".a":
                       content = plugin_meta(guid, [
-                          ("Any", 0, {"Exclude Editor": 1, "Exclude Linux64": 1, "Exclude OSXUniversal": 1, "Exclude Win": 1, "Exclude Win64": 1, "Exclude iOS": 0, "Exclude Android": 1}),
-                          ("iOS", 1, {"AddToEmbeddedBinaries": "false", "CPU": "AnyCPU"}),
-                          ("Editor", 0, {"CPU": "AnyCPU", "DefaultValueInitialized": "true", "OS": "AnyOS"}),
+                          ("Any", "", 0, {}),
+                          ("Editor", "Editor", 0, {"DefaultValueInitialized": "true"}),
+                          ("iPhone", "iOS", 1, {"AddToEmbeddedBinaries": "false", "CPU": "AnyCPU", "CompileFlags": "", "FrameworkDependencies": ""}),
                       ])
                   elif ext == ".aar":
                       content = plugin_meta(guid, [
-                          ("Any", 0, {"Exclude Editor": 1, "Exclude Linux64": 1, "Exclude OSXUniversal": 1, "Exclude Win": 1, "Exclude Win64": 1, "Exclude iOS": 1, "Exclude Android": 0}),
-                          ("Android", 1, {"CPU": "AnyCPU"}),
-                          ("Editor", 0, {"CPU": "AnyCPU", "DefaultValueInitialized": "true", "OS": "AnyOS"}),
+                          ("Any", "", 0, {}),
+                          ("Editor", "Editor", 0, {"DefaultValueInitialized": "true"}),
+                          ("Android", "Android", 1, {"CPU": "AnyCPU"}),
                       ])
                   elif ext == ".lib":
                       continue  # .lib is a linker stub, not needed by Unity
