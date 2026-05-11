@@ -33,7 +33,7 @@ namespace UnityImGui
         io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
         io.DisplaySize = ImVec2(static_cast<float>(windowWidth), static_cast<float>(windowHeight));
         io.IniFilename = gImguiConfigPath.empty() ? nullptr : gImguiConfigPath.c_str();
-        io.DisplayFramebufferScale = ImVec2(windowScale, windowScale);
+        io.DisplayFramebufferScale = ImVec2(1.0f, 1.0f);
         io.FontGlobalScale = windowScale;
         ImGui::StyleColorsDark();
         ImGui_ImplMetal_Init(&device);

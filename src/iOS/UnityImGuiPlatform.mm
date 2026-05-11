@@ -60,8 +60,8 @@ void CreateImGuiRenderer(void* /*platformArg0*/, void* /*platformArg1*/)
     std::string imguiConfigPath([iniPath UTF8String]);
 
     UnityImGui::Metal_Init(*(MTL::Device*)gMetalGraphics->MetalDevice(), &GetFrameData,
-                           static_cast<uint32_t>(logicalSize.width),
-                           static_cast<uint32_t>(logicalSize.height),
+                           static_cast<uint32_t>(logicalSize.width  * scale),
+                           static_cast<uint32_t>(logicalSize.height * scale),
                            static_cast<float>(scale), imguiConfigPath);
     gInitialized = true;
 }
