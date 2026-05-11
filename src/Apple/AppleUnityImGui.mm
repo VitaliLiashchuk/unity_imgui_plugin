@@ -8,6 +8,7 @@
 #include <UnityPluginAPI/IUnityGraphics.h>
 #include <UnityPluginAPI/IUnityGraphicsMetal.h>
 #include <UnityPluginAPI/IUnityInterface.h>
+#include <imgui.h>
 #include "PluginInternal.h"
 
 IUnityInterfaces* gUnityInterfaces = nullptr;
@@ -49,5 +50,13 @@ extern "C"
         }
         gUnityInterfaces = nullptr;
         gMetalGraphics = nullptr;
+    }
+
+    void UNITY_INTERFACE_EXPORT UNITY_INTERFACE_API UnityImGui_SetMouse(float x, float y, int leftDown)
+    {
+        if (!ImGui::GetCurrentContext()) return;
+        ImGuiIO& io = ImGui::GetIO();
+        io.AddMousePosEvent(x, y);
+        io.AddMouseButtonEvent(0, leftDown != 0);
     }
 }
